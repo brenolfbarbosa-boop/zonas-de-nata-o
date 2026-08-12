@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#111827">
+<title>Swim Zones</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f4f7fb;color:#111827;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+.app{max-width:520px;margin:auto;padding:24px 16px 32px}
+.header{text-align:center;margin-bottom:22px}
+.header h1{margin:0;font-size:27px;font-weight:800;letter-spacing:-.5px}
+.header p{margin:6px 0 0;color:#6b7280;font-size:14px}
+.card{background:white;border-radius:20px;padding:20px;box-shadow:0 8px 30px rgba(17,24,39,.08);margin-bottom:16px}
+label{display:block;font-size:13px;font-weight:700;color:#6b7280;margin-bottom:8px;text-transform:uppercase;letter-spacing:.6px}
+input{width:100%;font-size:32px;font-weight:800;text-align:center;border:2px solid #dbe2ea;border-radius:14px;padding:15px;background:#fafcff;outline:none;letter-spacing:1px}
+input:focus{border-color:#2563eb}
+.hint{text-align:center;font-size:12px;color:#6b7280;margin-top:8px}
+.result-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.result-title h2{font-size:18px;margin:0}
+.base{font-size:13px;color:#6b7280}
+table{width:100%;border-collapse:separate;border-spacing:0;overflow:hidden;border-radius:14px}
+th{background:#111827;color:white;text-align:left;padding:11px 12px;font-size:13px}
+th:last-child{text-align:right}
+td{padding:12px;border-bottom:1px solid #edf0f4;font-size:16px}
+td:last-child{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+tr:last-child td{border-bottom:0}
+.zone{font-weight:800}
+.note{font-size:12px;color:#6b7280;text-align:center;margin-top:14px;line-height:1.5}
+.error{color:#b91c1c;font-size:13px;margin-top:8px;text-align:center;min-height:18px}
+.hidden{display:none}
+.footer{text-align:center;color:#9ca3af;font-size:11px;margin-top:18px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>🏊 Swim Zones</h1>
+    <p>Calculadora de tempos de treino</p>
+  </div>
+
+  <div class="card">
+    <label for="tempo">Tempo-base</label>
+    <input id="tempo" inputmode="numeric" pattern="[0-9]*" autocomplete="off"
+           placeholder="Ex.: 130" aria-label="Tempo-base">
+    <div class="hint">Digite apenas números: 130 = 01:30 · 525 = 05:25 · 40 = 00:40</div>
+    <div id="erro" class="error"></div>
+  </div>
+
+  <div id="resultado" class="card hidden">
+    <div class="result-title">
+      <h2>Tempo-alvo</h2>
+      <div class="base" id="baseLabel"></div>
+    </div>
+    <table>
+      <thead><tr><th>Zona</th><th>Tempo-alvo</th></tr></thead>
+      <tbody id="tabela"></tbody>
+    </table>
+    <div class="note">O cálculo é atualizado automaticamente.</div>
+  </div>
+
+  <div class="footer">
+    A0 50–60% · A1 60–70% · A2 70–80% · A3 80–90% · A4 (VO₂) 90–95%<br>
+    Resistência 92–96% · Tolerância 95–98% · Potência 98–100%
+  </div>
+</div>
+
+<script>
+const zonas=[
+  ["A0",0.50,0.60],
+  ["A1",0.60,0.70],
+  ["A2",0.70,0.80],
+  ["A3",0.80,0.90],
+  ["A4 (VO₂)",0.90,0.95],
+  ["Resistência",0.92,0.96],
+  ["Tolerância",0.95,0.98],
+  ["Potência",0.98,1.00]
+];
+
+function parseNumeros(valor){
+  const digits=valor.replace(/\D/g,"");
+  if(!digits)return null;
+  let sec,min;
+  if(digits.length<=2){
+    min=0; sec=parseInt(digits,10);
+  }else{
+    sec=parseInt(digits.slice(-2),10);
+    min=parseInt(digits.slice(0,-2),10);
+  }
+  if(sec>=60)return null;
+  return min*60+sec;
+}
+
+function formatTempo(total){
+  let s=Math.round(total);
+  const horas=Math.floor(s/3600);
+  s%=3600;
+  const min=Math.floor(s/60);
+  const sec=s%60;
+
+  if(horas>0){
+    return horas+":"+String(min).padStart(2,"0")+":"+String(sec).padStart(2,"0");
+  }
+  return String(min).padStart(2,"0")+":"+String(sec).padStart(2,"0");
+}
+
+function atualizar(){
+  const input=document.getElementById("tempo");
+  const erro=document.getElementById("erro");
+  const resultado=document.getElementById("resultado");
+  const tabela=document.getElementById("tabela");
+  const valor=input.value.replace(/\D/g,"");
+  input.value=valor;
+
+  if(!valor){
+    erro.textContent="";
+    resultado.classList.add("hidden");
+    tabela.innerHTML="";
+    return;
+  }
+
+  const base=parseNumeros(valor);
+  if(base===null){
+    erro.textContent="Tempo inválido. Os dois últimos números devem representar os segundos (00–59).";
+    resultado.classList.add("hidden");
+    return;
+  }
+
+  erro.textContent="";
+  document.getElementById("baseLabel").textContent="Base: "+formatTempo(base);
+  tabela.innerHTML="";
+
+  zonas.forEach(z=>{
+    const lento=base*(2-z[1]);
+    const rapido=base*(2-z[2]);
+    const tr=document.createElement("tr");
+    tr.innerHTML='<td class="zone">'+z[0]+'</td><td>'+formatTempo(lento)+' – '+formatTempo(rapido)+'</td>';
+    tabela.appendChild(tr);
+  });
+
+  resultado.classList.remove("hidden");
+}
+
+document.getElementById("tempo").addEventListener("input",atualizar);
+</script>
+</body>
+</html>
