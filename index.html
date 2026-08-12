@@ -141,7 +141,7 @@ function atualizar(){
     const lento=base*(2-z[1]);
     const rapido=base*(2-z[2]);
     const tr=document.createElement("tr");
-    tr.innerHTML='<td class="zone">'+z[0]+'</td><td>'+formatTempo(lento)+' – '+formatTempo(rapido)+'</td>';
+    tr.innerHTML='<td class="zone">'+z[0]+'</td><td>'+formatTempo(rapido)+' – '+formatTempo(lento)+'</td>';
     tabela.appendChild(tr);
   });
 
